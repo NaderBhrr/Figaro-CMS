@@ -1,0 +1,19 @@
+@import "~styles/_dependencies";
+
+.login {
+  .wapper {
+    background-color: $white;
+    color: $mineShaft;
+    border-radius: 10px;
+    margin: 0 auto;
+    margin-top: 200px;
+    overflow: hidden;
+    position: relative;
+    width: 500px;
+
+    @include mobile {
+      margin-top: 20px;
+      width: 320px;
+    }
+  }
+}
