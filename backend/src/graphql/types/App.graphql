@@ -7,10 +7,12 @@ type App {
   description: String!
   createdAt: Datetime!
   updatedAt: Datetime!
+  nodels: [Model!]
 }
 
 type Query {
   getApps: [App!]
+  getAppById(id: String!): App!
 }
 
 type Mutation {

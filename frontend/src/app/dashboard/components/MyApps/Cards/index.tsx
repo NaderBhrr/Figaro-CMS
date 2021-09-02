@@ -2,7 +2,11 @@
 import React, { FC, ReactElement, memo } from "react";
 import { Icon } from "@contentpi/ui";
 
+// Constants
+import { STAGE_LINK } from "@constants/links";
+
 // Components
+import Link from "@ui/Link";
 import AppIcon from "../AppIcon";
 
 // Styles
@@ -11,20 +15,25 @@ import styles from "./Cards.scss";
 // Interfaces
 interface iProps {
   items: any[];
+  router: any;
 }
 
-const Cards = ({ items }: iProps): ReactElement => {
+const Cards = ({ items, router }: iProps): ReactElement => {
   return (
     <section>
       <h1>My Apps</h1>
 
       <ul>
         {items.map((app) => {
+          router.appId = app.id;
+
           return (
             <li key={app.id}>
-              <section className="card" title={app.description}>
-                <AppIcon app={app} />
-              </section>
+              <Link href={STAGE_LINK(router).href} as={STAGE_LINK(router).as}>
+                <section className="card" title={app.description}>
+                  <AppIcon app={app} />
+                </section>
+              </Link>
             </li>
           );
         })}

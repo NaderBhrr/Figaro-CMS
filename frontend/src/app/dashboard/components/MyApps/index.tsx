@@ -1,5 +1,5 @@
 // Dependencies
-import React, { FC, ReactElement, memo } from "react";
+import React, { FC, ReactElement, useContext, memo } from "react";
 
 // Contexts
 import { I18nContext } from "@contexts/i18n";
@@ -7,27 +7,43 @@ import { I18nContext } from "@contexts/i18n";
 // Shared components
 import MainLayout from "@layouts/main/MainLayout";
 import Logo from "@layouts/main/Logo";
+import Logout from "@layouts/main/Logout";
+import LanguageSwitcher from "@layouts/main/LanguageSwitcher";
 import Cards from "./Cards";
+
+// Styles
+import { StyledMyApps } from "./MyApps.styled";
 
 interface iProps {
   dataGetApps: any;
+  router: any;
 }
 
-const MyApps: FC<iProps> = ({ dataGetApps }): ReactElement => {
+const MyApps: FC<iProps> = ({ dataGetApps, router }): ReactElement => {
   // First render
   if (!dataGetApps.getApps) {
     return <div />;
   }
 
+  // Contexts
+  const { t } = useContext(I18nContext);
+
   return (
     <MainLayout title={t("My Apps")}>
-      <div className="header">
-        <div className="logo">
-          <Logo />
+      <StyledMyApps>
+        <div className="header">
+          <div className="logo">
+            <Logo />
+          </div>
         </div>
-      </div>
 
-      <Cards items={dataGetApps.getApps} />
+        <Cards items={dataGetApps.getApps} router={router} />
+
+        <div className="flexFooter">
+          <LanguageSwitcher />
+          <Logout router={router} />
+        </div>
+      </StyledMyApps>
     </MainLayout>
   );
 };
