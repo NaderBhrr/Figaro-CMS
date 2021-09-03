@@ -1,0 +1,299 @@
+// Dependencies
+import React, {
+  FC,
+  ReactElement,
+  useState,
+  useEffect,
+  useContext,
+  memo,
+} from "react";
+import {
+  Modal as ModalUI,
+  Badge,
+  Input,
+  PrimaryButton,
+  LinkButton,
+  Toggle,
+} from "@contentpi/ui";
+import { camelCase, redirectTo, waitFor } from "@contentpi/utils";
+import { getEmptyValues } from "@contentpi/core";
+import { useMutation } from "@apollo/client";
+
+// Hooks
+import usePrevious from "@lib/usePrevious";
+
+// Contexts
+import { FormContext } from "@contexts/form";
+import { I18nContext } from "@contexts/i18n";
+
+// Mutation
+import EDIT_FIELD_MUTATION from "@graphql/fields/editField.mutation";
+
+// Styles
+import { theme } from "@styles/theme";
+import { StyledModal } from "./Modal.styled";
+
+interface iProps {
+  isOpen: boolean;
+  label: string;
+  options: any;
+  onClose(): void;
+}
+
+const Modal: FC<iProps> = ({
+  isOpen,
+  label,
+  onClose,
+  options,
+}): ReactElement => {
+  // Contexts
+  const { t } = useContext(I18nContext);
+
+  // Getting data from options
+  const {
+    data: { id: fieldId, fields },
+  } = options;
+
+  // Previous Props
+  const prevProps: any = usePrevious({ options });
+
+  // States
+  const initialValues = {
+    type: "",
+    fieldName: "",
+    identifier: "",
+    order: "1",
+    description: "",
+    isMedia: false,
+    isRequired: true,
+    isUnique: false,
+    isHide: false,
+    isPrimaryKey: false,
+  };
+  const [values, setValues] = useState(initialValues);
+  const [required, setRequired] = useState<any>({
+    appName: false,
+    identifier: false,
+  });
+  const [loading, setLoading] = useState(false);
+
+  // Mutations
+  const [editFieldMutation] = useMutation(EDIT_FIELD_MUTATION);
+
+  // Contexts
+  const { onChange, setValue } = useContext(FormContext);
+
+  // Methods
+  const _onClose = (): any => {
+    setValues(initialValues);
+    onClose();
+  };
+
+  const _onChange = (e: any): any => {
+    if (e.target.name === "fieldName") {
+      setValue("identifier", camelCase(e.target.value), setValues);
+    }
+
+    if (e.target.name === "order") {
+      if (Number(e.target.value) <= 0) {
+        e.target.value = e.target.value === "0" ? "1" : e.target.value;
+      } else if (e.target.value > 25) {
+        e.target.value = "25";
+      }
+
+      setValue("order", Math.abs(e.target.value), setValues);
+    }
+
+    onChange(e, setValues);
+  };
+
+  const handleSubmit = async (): Promise<void> => {
+    const emptyValues = getEmptyValues(values, ["fieldName", "identifier"]);
+
+    if (emptyValues) {
+      setRequired(emptyValues);
+    } else {
+      setLoading(true);
+
+      waitFor(1).then(async () => {
+        setLoading(false);
+
+        const edited = await editFieldMutation({
+          variables: {
+            id: fieldId,
+            ...values,
+          },
+        });
+
+        if (edited) {
+          redirectTo("_self");
+        }
+      });
+    }
+  };
+
+  // Effects
+  useEffect(() => {
+    const currentField = fields
+      ? fields.filter((field: any) => field.id === fieldId)
+      : [];
+
+    if (prevProps && prevProps.options !== options && currentField.length > 0) {
+      setValues(currentField[0]);
+    } else if (currentField.length > 0) {
+      setValues(currentField[0]);
+    }
+  }, [fields, options]);
+
+  // Wait until we set our form context
+  if (!values) {
+    return <div />;
+  }
+
+  return (
+    <ModalUI isOpen={isOpen} label={label} options={options} onClose={_onClose}>
+      <StyledModal>
+        <div>
+          <label htmlFor="fieldName">
+            {t("Field Name")}{" "}
+            {required.fieldName && <Badge danger>{t("Required")}</Badge>}
+          </label>
+          <Input
+            id="fieldName"
+            name="fieldName"
+            placeholder="First Field? Try Title"
+            hasError={required.fieldName}
+            onChange={_onChange}
+            value={values.fieldName}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="identifier">
+            {t("Identifier")}{" "}
+            {required.identifier && <Badge danger>{t("Required")}</Badge>}
+          </label>
+          <Input
+            id="identifier"
+            name="identifier"
+            value={values.identifier}
+            hasError={required.identifier}
+            onChange={_onChange}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="order">{t("Order (1 to 25)")}</label>
+          <Input
+            type="number"
+            name="order"
+            min="1"
+            max="25"
+            onChange={_onChange}
+            value={values.order}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="description">{t("Description")}</label>
+          <Input
+            name="description"
+            placeholder={t("Small description about your field")}
+            onChange={_onChange}
+            value={values.description}
+          />
+        </div>
+
+        <div className="toggles">
+          <div className="left">
+            <div style={{ marginBottom: "20px" }}>
+              <Toggle
+                color={theme.colors.green.screaminGreen}
+                type="round"
+                label={t("Make field required")}
+                onChange={(): void =>
+                  setValue("isRequired", !values.isRequired, setValues)
+                }
+                checked={values.isRequired}
+              />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <Toggle
+                color={theme.colors.green.screaminGreen}
+                type="round"
+                label={t("Set field as Primary Key")}
+                onChange={(): void =>
+                  setValue("isPrimaryKey", !values.isPrimaryKey, setValues)
+                }
+                checked={values.isPrimaryKey}
+              />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <Toggle
+                color={theme.colors.green.screaminGreen}
+                type="round"
+                label={t("Is Media?")}
+                onChange={(): void =>
+                  setValue("isMedia", !values.isMedia, setValues)
+                }
+                checked={values.isMedia}
+              />
+            </div>
+          </div>
+
+          <div className="right">
+            <div style={{ marginBottom: "20px" }}>
+              <Toggle
+                color={theme.colors.green.screaminGreen}
+                type="round"
+                label={t("Set field as unique")}
+                onChange={(): void =>
+                  setValue("isUnique", !values.isUnique, setValues)
+                }
+                checked={values.isUnique}
+              />
+            </div>
+            <div style={{ marginBottom: "20px" }}>
+              <Toggle
+                color={theme.colors.green.screaminGreen}
+                type="round"
+                label={t("Hide field")}
+                onChange={(): void =>
+                  setValue("isHide", !values.isHide, setValues)
+                }
+                checked={values.isHide}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: "20px" }}>
+          <Toggle
+            color={theme.colors.green.screaminGreen}
+            type="round"
+            label={t("Is Media (image, video or document)?")}
+            onChange={(): void =>
+              setValue("isMedia", !values.isMedia, setValues)
+            }
+            checked={values.isMedia}
+          />
+        </div>
+
+        <div className="buttons">
+          <LinkButton onClick={_onClose}>{t("Cancel")}</LinkButton>
+          <PrimaryButton
+            onClick={handleSubmit}
+            isLoading={loading}
+            loadingText={t("Updating Field...")}
+          >
+            {t("Update Field")}
+          </PrimaryButton>
+        </div>
+      </StyledModal>
+    </ModalUI>
+  );
+};
+
+export default memo(Modal);

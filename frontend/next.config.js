@@ -1,11 +1,19 @@
 import path from "path";
+import Dotenv from "dotenv-webpack";
 
 module.exports = {
   sassOptions: {
     includePaths: [path.join(__dirname, "styles")],
   },
   devIndicators: { autoPrerender: false },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    // Fixes npm packages that depend on `fs` module
+    if (!isServer) {
+      config.node = {
+        fs: "empty",
+      };
+    }
+
     // Aliases
     const dir = __dirname;
 
@@ -36,6 +44,13 @@ module.exports = {
       "./src/shared/components/ui"
     );
     config.resolve.alias.styles = path.resolve(dir, "./src/shared/styles");
+
+    // Plugins
+    config.plugins.push(
+      new Dotenv({
+        silent: true,
+      })
+    );
 
     return config;
   },

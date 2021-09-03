@@ -1,14 +1,17 @@
 // Dependencies
-import { ApolloServer } from 'apollo-server';
-import { makeExecutableSchema } from 'graphql-tools';
+import { ApolloServer, makeExecutableSchema } from 'apollo-server';
 
+// Data
+import { setInitialData } from './data';
+
+// Models
 import models from './models';
 
-// Type Definitions and resolver
+// Type Definitions & Resolvers
 import resolvers from './graphql/resolvers';
 import typeDefs from './graphql/types';
 
-//  Configuration
+// Configuration
 import { $server } from '../config';
 
 // Schema
@@ -20,15 +23,23 @@ const schema = makeExecutableSchema({
 // Apollo Server
 const apolloServer = new ApolloServer({
   schema,
-  context: { models }
+  context: {
+    models
+  }
 });
 
 const alter = true;
 const force = false;
 
 models.sequelize.sync({ alter, force }).then(() => {
-  apolloServer.listen($server.port).then(db => {
+  apolloServer
+    .listen($server.port)
     // eslint-disable-next-line no-console
-    console.log(`Server running on ${db.url}`);
-  });
+    .then(({ url }) => {
+      // Setting up initial data
+      setInitialData();
+
+      // eslint-disable-next-line no-console
+      console.log(`Running on ${url}`);
+    });
 });
