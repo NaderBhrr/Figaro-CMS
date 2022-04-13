@@ -1,6 +1,6 @@
 ## Introduction:
 
-The repository for the open-sorce "Headless CMS" titles as **contentPI**
+The repository for the open-sorce "Headless CMS" titles as **Figaro**
 
 ### Package Dependencies:
 
